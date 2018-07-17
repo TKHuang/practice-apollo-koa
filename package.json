@@ -14,5 +14,8 @@
     "graphql": "^0.13.2",
     "koa": "^2.5.2",
     "lodash": "^4.17.10"
+  },
+  "devDependencies": {
+    "nodemon": "^1.18.2"
   }
 }
