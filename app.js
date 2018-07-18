@@ -18,9 +18,14 @@ const server = new ApolloServer({
 const app = new Koa()
 server.applyMiddleware({ app })
 
-app.listen({ port: 4000 }, () => {
-  console.log(`🚀 Server ready at http://localhost:4000${server.graphqlPath}`)
-})
+app.listen(
+  {
+    port: 4000,
+  },
+  () => {
+    console.log(`🚀 Server ready at http://localhost:4000${server.graphqlPath}`)
+  },
+)
 // This `listen` method launches a web-server.  Existing apps
 // can utilize middleware options, which we'll discuss later.
 // server.listen().then(({ url }) => {
