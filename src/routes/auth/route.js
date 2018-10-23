@@ -5,6 +5,8 @@ const v = require('./validate')
 
 const router = new Router()
 
-router.get('/login', validate(v.login), handler.login)
+router.post('/login', handler.login)
+router.post('/register', handler.register)
+router.get('/logout', handler.logout)
 
 module.exports = router

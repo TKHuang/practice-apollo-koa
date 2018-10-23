@@ -1,39 +1,18 @@
 import Debug from 'debug'
 import Koa from 'koa'
-// import jwt from 'jsonwebtoken'
-// import jwtDecode from 'jwt-decode'
+import http from 'http'
 import Logger from 'koa-logger'
 import BodyParser from 'koa-bodyparser'
 import Helmet from 'koa-helmet'
-// import R from 'ramda'
-// import { graphqlKoa, graphiqlKoa } from 'apollo-server-koa'
 import { ApolloServer } from 'apollo-server-koa'
-// import { execute, subscribe } from 'graphql'
-// import { SubscriptionServer } from 'subscriptions-transport-ws'
-// import { resolvers } from './schema/resolvers'
-import { typeDefs, resolvers, mocks } from './schema/schema'
-
-// import { executableSchema } from './schema/executableSchema'
+import schema, { mocks } from './schema/schema'
 import errHandler from './middlewares/errorHandler'
 import router from './routes'
+import db from './db'
+import { verifyToken } from './utils/jwt'
 
 const debug = Debug('app:server')
 const app = new Koa()
-
-// In the most basic sense, the ApolloServer can be started
-// by passing type definitions (typeDefs) and the resolvers
-// responsible for fetching the data for those types.
-const server = new ApolloServer({
-  typeDefs,
-  resolvers,
-  mocks,
-  engine: {
-    apiKey: 'service:TKHuang-9721:UTVgmz_jbGAIaumqQ2ktkg',
-  },
-  context: async ({ ctx: { req }, connection }) => {
-    console.log(`connection: ${connection}`)
-  },
-})
 
 debug('start server!!!')
 
@@ -47,85 +26,70 @@ app.use(
     onerror: (err, ctx) => ctx.throw('body parse error', 422),
   }),
 )
+
+// app.use(passport.initialize())
 app.use(errHandler)
 // API routes.
 app.use(router.routes())
 
-server.applyMiddleware({
+// Workaround for disappear cursor in playground.
+const playground = {
+  settings: {
+    'editor.cursorShape': 'line',
+  },
+}
+const apoServer = new ApolloServer({
+  schema,
+  mocks,
+  engine: {
+    apiKey: 'service:TKHuang-9721:UTVgmz_jbGAIaumqQ2ktkg',
+  },
+  context: async ({ ctx, connection }) => {
+    if (connection) {
+      // check connection for metadata
+      debug('subscription connection created.')
+      return {}
+    }
+
+    debug('Normal request.')
+    // check from req
+    const token = ctx.req.headers.authorization || ''
+    let context = {}
+    if (token) {
+      try {
+        const decoded = verifyToken(token)
+        debug('decoded token:', JSON.stringify(decoded, null, 2))
+        context = {
+          user: decoded,
+          db,
+        }
+      } catch (err) {
+        debug(err)
+      }
+    }
+    return context
+  },
+  subscriptions: {
+    onConnect: (connectionParams, webSocket) => {},
+  },
+  playground,
+})
+apoServer.applyMiddleware({
   app,
 })
 
-app.listen(
+const httpServer = http.createServer(app.callback())
+apoServer.installSubscriptionHandlers(httpServer)
+
+httpServer.listen(
   {
     port: 4000,
   },
   () => {
-    console.log(`🚀 Server ready at http://localhost:4000${server.graphqlPath}`)
+    console.log(
+      `🚀 Server ready at http://localhost:4000${apoServer.graphqlPath}`,
+    )
   },
 )
 
-// Setup the subscription server
-// new SubscriptionServer(
-//   {
-//     subscriptionManager,
-//     onSubscribe(message, params) {
-//       setTimeout(() => {
-//         resolvers.Book.findAll().forEach(book => {
-//           subscriptionManager.pubsub.publish('bookAdded', book)
-//         })
-//       }, 0)
-//       return Promise.resolve(params)
-//     },
-//   },
-//   {
-//     server,
-//     path: '/graphql-sock',
-//   },
-// )
-// SubscriptionServer.create(
-//   {
-//     schema: executableSchema,
-//     execute,
-//     subscribe,
-//     onConnect: (connectionParams, socket) => {
-//       try {
-//         const { user } = jwt.verify(
-//           connectionParams.authToken,
-//           process.env.SECRET,
-//         )
-//         const jwtData = jwtDecode(connectionParams.authToken)
-//         const timeout = jwtData.exp * 1000 - Date.now()
-//         debug('authenticated', jwtData)
-//         debug('set connection timeout', timeout)
-//         setTimeout(() => {
-//           // let the client reconnect
-//           socket.close()
-//         }, timeout)
-//         return {
-//           subscriptionUser: user,
-//         }
-//       } catch (error) {
-//         debug('authentication failed', error.message)
-//         return {
-//           subscriptionUser: null,
-//         }
-//       }
-//     },
-//     onOperation(message, params) {
-//       setTimeout(() => {
-//         R.forEach(todo => {
-//           pubsub.publish(TODO_UPDATED_TOPIC, {
-//             todoUpdated: todo,
-//           })
-//           debug('publish', TODO_UPDATED_TOPIC, todo)
-//         }, todos)
-//       }, 0)
-//       return Promise.resolve(params)
-//     },
-//   },
-//   {
-//     server,
-//     path: '/graphql-sock',
-//   },
-// )
 export default app

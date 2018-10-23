@@ -1,9 +1,4 @@
-const request = require('request-promise-native')
-const jwt = require('jsonwebtoken')
-const Boom = require('boom')
 const debug = require('debug')('api:auth')
-
-const { SSO_VALIDATE_URL } = process.env
 
 const login = async ctx => {
   const { s } = ctx.query
@@ -25,7 +20,12 @@ const login = async ctx => {
     ctx.body = boom
   }
 }
+const register = async ctx => {}
+
+const logout = async ctx => {}
 
 module.exports = {
   login,
+  register,
+  logout,
 }

@@ -5,7 +5,7 @@
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon src/index.js",
+    "dev": "DEBUG=app:* NODE_ENV=dev nodemon src/index.js",
     "lint": "eslint src",
     "format": "prettier-eslint --write 'src/**/*.js'",
     "precommit": "lint-staged"
@@ -17,6 +17,7 @@
     "apollo-server-koa": "^2.0.0",
     "babel-core": "^6.26.3",
     "babel-polyfill": "^6.26.0",
+    "bcrypt": "^3.0.0",
     "boom": "^7.2.0",
     "debug": "^3.1.0",
     "dotenv-safe": "^6.0.0",
@@ -35,6 +36,7 @@
     "koa-logger": "^3.2.0",
     "koa-router": "^7.4.0",
     "lodash": "^4.17.10",
+    "mongoose": "^5.2.13",
     "prettier-eslint-cli": "^4.7.1",
     "ramda": "^0.25.0",
     "subscriptions-transport-ws": "^0.9.13"

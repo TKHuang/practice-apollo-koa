@@ -1,15 +1,24 @@
+import MockData from './mockdata'
+
+const typeDef = `
+  type Author {
+    name: String
+    mockData: MockData
+    gender: String
+  }
+`
 const resolvers = {
   Author: {
-    name(book) {
-      return book.name
+    name(author) {
+      return author.name
+    },
+    gender(author) {
+      return author.gender
     },
   },
 }
 
-// module.exports = {
-//   resolvers,
-// }
-
 export default {
+  typeDef: () => [typeDef, MockData.typeDef],
   resolvers,
 }
